@@ -146,10 +146,6 @@ getPlexPyUsersData(onGetPlexPyUsersData);
 // Every minute
 setInterval(function() {
     getPlexPyActivityData(onGetPlexPyActivityData);
-}, 1000 * 60);
-
-// Every hour
-setInterval(function() {
     getPlexPyLibraryData(onGetPlexPyLibraryData);
     getPlexPyUsersData(onGetPlexPyUsersData);
-}, 1000 * 60 * 60);
+}, 1000 * 60);
