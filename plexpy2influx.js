@@ -69,16 +69,6 @@ function onGetPlexPyActivityData(error, response, body) {
         direct_stream_playing_count: 0
     };
 
-    var tags = {
-        'resolution_sd': 0,
-        'resolution_480': 0,
-        'resolution_720': 0,
-        'resolution_1080': 0,
-        'resolution_4k': 0,
-        'mediaType_episode': 0,
-        'mediaType_movie': 0
-    };
-
     if (sessions.length === 0) {
         console.log('No sessions to log:', new Date());
         return;
@@ -97,15 +87,25 @@ function onGetPlexPyActivityData(error, response, body) {
             }
         }
 
-        tags['resolution_' + session.video_resolution]++;
-        tags['mediaType_' + session.media_type]++;
+        writeToInflux('session', {
+            progress_percent: session.progress_percent,
+            transcode_progress: session.transcode_progress
+        }, {
+            type: session.transcode_decision,
+            resolution: session.video_resolution,
+            mediaType: session.media_type,
+            title: session.full_title,
+            player: session.player
+        }, function() {
+            console.dir('wrote session data to influx');
+        });
 
         if (session.state === 'playing') {
             sessionData.total_stream_playing_count++;
         }
     });
 
-    writeToInflux('sessions', sessionData, tags, function() {
+    writeToInflux('sessions', sessionData, null, function() {
         console.dir('wrote session data to influx');
     });
 }
