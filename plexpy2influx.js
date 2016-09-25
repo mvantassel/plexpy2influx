@@ -88,6 +88,7 @@ function onGetPlexPyActivityData(error, response, body) {
         }
 
         writeToInflux('session', {
+            play_count: 1,
             progress_percent: session.progress_percent,
             transcode_progress: session.transcode_progress
         }, {
@@ -95,6 +96,8 @@ function onGetPlexPyActivityData(error, response, body) {
             resolution: session.video_resolution,
             mediaType: session.media_type,
             title: session.full_title,
+            player: session.player,
+            user_id: session.user_id
         }, function() {
             console.dir('wrote session data to influx');
         });
