@@ -1,8 +1,8 @@
 'use strict';
 
-var _ = require('lodash');
-var influx = require('influx');
-var request = require('request');
+let _ = require('lodash');
+let influx = require('influx');
+let request = require('request');
 
 if (!process.env.PLEXPY_TOKEN) {
     throw new Error('PLEXPY_TOKEN is required');
@@ -15,7 +15,7 @@ let influxClient = influx({
     database: process.env.INFLUX_DB || 'plex'
 });
 
-var plexPyConfig = {
+let plexPyConfig = {
     token: process.env.PLEXPY_TOKEN,
     host: process.env.PLEXPY_HOST || 'localhost',
     protocol: process.env.PLEXPY_PROTOCOL ||'http',
@@ -23,7 +23,7 @@ var plexPyConfig = {
     baseUrl: process.env.PLEXPY_BASEURL || ''
 };
 
-var plexpyOptions = {
+let plexpyOptions = {
     url: `${plexPyConfig.protocol}://${plexPyConfig.host}:${plexPyConfig.port}/${plexPyConfig.baseUrl}/api/v2?apikey=${plexPyConfig.token}`
 };
 
@@ -69,6 +69,25 @@ function onGetPlexPyActivityData(error, response, body) {
         direct_stream_playing_count: 0
     };
 
+    var tags = {
+        resolutions: {
+            sd: 0,
+            480: 0,
+            720: 0,
+            1080: 0,
+            '4k': 0
+        },
+        mediaType: {
+            episode: 0,
+            movie: 0
+        }
+    };
+
+    if (sessions.length === 0) {
+        console.log('No sessions to log:', new Date());
+        return;
+    }
+
     _.each(sessions, function(session) {
         if (session.transcode_decision === 'direct play') {
             sessionData.direct_stream_count++;
@@ -82,12 +101,15 @@ function onGetPlexPyActivityData(error, response, body) {
             }
         }
 
+        tags.resolutions[session.video_resolution]++;
+        tags.mediaType[session.media_type]++;
+
         if (session.state === 'playing') {
             sessionData.total_stream_playing_count++;
         }
     });
 
-    writeToInflux('sessions', sessionData, null, function() {
+    writeToInflux('sessions', sessionData, tags, function() {
         console.dir('wrote session data to influx');
     });
 }
@@ -108,7 +130,7 @@ function onGetPlexPyLibraryData(error, response, body) {
         };
 
         writeToInflux('library', value, tags, function() {
-            console.dir('wrote library data to influx');
+            console.dir('wrote library data to influx:', new Date());
         });
     });
 }
@@ -129,23 +151,17 @@ function onGetPlexPyUsersData(error, response, body) {
         var tags = { username: user.friendly_name };
 
         writeToInflux('users', value, tags, function() {
-            console.dir('wrote user data to influx');
+            console.dir('wrote user data to influx:', new Date());
         });
     });
 }
 
-// Get Plex Activity Data every second.
-getPlexPyActivityData(onGetPlexPyActivityData);
-
-// Get Plex Library Data every hour.
-getPlexPyLibraryData(onGetPlexPyLibraryData);
-
-// Get Plex User Data every hour.
-getPlexPyUsersData(onGetPlexPyUsersData);
-
-// Every minute
-setInterval(function() {
+function getAllTheMetrics() {
     getPlexPyActivityData(onGetPlexPyActivityData);
     getPlexPyLibraryData(onGetPlexPyLibraryData);
     getPlexPyUsersData(onGetPlexPyUsersData);
-}, 1000 * 60);
+}
+
+// Every minute
+getAllTheMetrics();
+setInterval(getAllTheMetrics, 1000 * 30);
