@@ -1,0 +1,14 @@
+{
+  "name": "plexpy2influx",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node plexpy2influx.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "influx": "^4.2.2",
+    "lodash": "^4.16.1",
+    "request": "^2.75.0"
+  }
+}
