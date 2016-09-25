@@ -20,7 +20,7 @@ var plexPyConfig = {
     host: process.env.PLEXPY_HOST || 'localhost',
     protocol: process.env.PLEXPY_PROTOCOL ||'http',
     port: process.env.PLEXPY_PORT || 8181,
-    baseUrl: process.env.PLEXPY_BASEURL || 'plexpy'
+    baseUrl: process.env.PLEXPY_BASEURL || ''
 };
 
 var plexpyOptions = {
