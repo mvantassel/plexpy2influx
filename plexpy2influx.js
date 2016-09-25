@@ -70,17 +70,13 @@ function onGetPlexPyActivityData(error, response, body) {
     };
 
     var tags = {
-        resolutions: {
-            sd: 0,
-            480: 0,
-            720: 0,
-            1080: 0,
-            '4k': 0
-        },
-        mediaType: {
-            episode: 0,
-            movie: 0
-        }
+        'resolution_sd': 0,
+        'resolution_480': 0,
+        'resolution_720': 0,
+        'resolution_1080': 0,
+        'resolution_4k': 0,
+        'mediaType_episode': 0,
+        'mediaType_movie': 0
     };
 
     if (sessions.length === 0) {
@@ -101,8 +97,8 @@ function onGetPlexPyActivityData(error, response, body) {
             }
         }
 
-        tags.resolutions[session.video_resolution]++;
-        tags.mediaType[session.media_type]++;
+        tags['resolution_' + session.video_resolution]++;
+        tags['mediaType_' + session.media_type]++;
 
         if (session.state === 'playing') {
             sessionData.total_stream_playing_count++;
