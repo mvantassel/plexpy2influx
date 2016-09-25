@@ -95,7 +95,6 @@ function onGetPlexPyActivityData(error, response, body) {
             resolution: session.video_resolution,
             mediaType: session.media_type,
             title: session.full_title,
-            player: session.player
         }, function() {
             console.dir('wrote session data to influx');
         });
