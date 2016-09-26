@@ -8,6 +8,8 @@ if (!process.env.PLEXPY_TOKEN) {
     throw new Error('PLEXPY_TOKEN is required');
 }
 
+let checkInterval = process.env.UPDATE_INTERVAL_MS || 1000 * 30;
+
 let influxClient = influx({
     host: process.env.INFLUX_HOST || 'localhost',
     port: process.env.INFLUX_PORT || 8086,
@@ -70,7 +72,7 @@ function onGetPlexPyActivityData(error, response, body) {
     };
 
     if (sessions.length === 0) {
-        console.log('No sessions to log:', new Date());
+        console.log('No sessions to log:' + new Date());
         return;
     }
 
@@ -87,6 +89,8 @@ function onGetPlexPyActivityData(error, response, body) {
             }
         }
 
+        console.log(session);
+
         writeToInflux('session', {
             play_count: 1,
             progress_percent: session.progress_percent,
@@ -97,9 +101,9 @@ function onGetPlexPyActivityData(error, response, body) {
             mediaType: session.media_type,
             title: session.full_title,
             player: session.player,
-            user_id: session.user_id
+            user: session.user
         }, function() {
-            console.dir('wrote session data to influx');
+            console.dir('wrote session data to influx:' + new Date());
         });
 
         if (session.state === 'playing') {
@@ -108,7 +112,7 @@ function onGetPlexPyActivityData(error, response, body) {
     });
 
     writeToInflux('sessions', sessionData, null, function() {
-        console.dir('wrote session data to influx');
+        console.dir('wrote sessions data to influx:' + new Date());
     });
 }
 
@@ -128,7 +132,7 @@ function onGetPlexPyLibraryData(error, response, body) {
         };
 
         writeToInflux('library', value, tags, function() {
-            console.dir('wrote library data to influx:', new Date());
+            console.dir('wrote library data to influx:' + new Date());
         });
     });
 }
@@ -149,7 +153,7 @@ function onGetPlexPyUsersData(error, response, body) {
         var tags = { username: user.friendly_name };
 
         writeToInflux('users', value, tags, function() {
-            console.dir('wrote user data to influx:', new Date());
+            console.dir('wrote user data to influx:' + new Date());
         });
     });
 }
@@ -160,6 +164,6 @@ function getAllTheMetrics() {
     getPlexPyUsersData(onGetPlexPyUsersData);
 }
 
-// Every minute
+// Every 30 seconds
 getAllTheMetrics();
-setInterval(getAllTheMetrics, 1000 * 30);
+setInterval(getAllTheMetrics, checkInterval);

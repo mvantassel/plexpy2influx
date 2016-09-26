@@ -22,6 +22,7 @@ PLEXPY_PROTOCOL | Is PlexPy SSL? | http | https | optional
 PLEXPY_HOST | Where is your PlexPy running? | localhost | plexpy | recommended
 PLEXPY_PORT | What port is PlexPy running on? | 8181 | 999 | optional
 PLEXPY_BASEURL | Is PlexPy running behind a proxy? | | 'plexpy' | optional
+UPDATE_INTERVAL_MS | How often should it check for new metrics? | 30000 | 1000 | optional
 
 ## Tags
 
