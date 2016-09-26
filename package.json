@@ -8,7 +8,6 @@
   "dependencies": {},
   "devDependencies": {
     "influx": "^4.2.2",
-    "lodash": "^4.16.1",
     "request": "^2.75.0"
   }
 }
