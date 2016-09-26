@@ -71,7 +71,7 @@ function onGetPlexPyActivityData(error, response, body) {
     };
 
     if (sessions.length === 0) {
-        console.log('No sessions to log: ' + new Date());
+        console.log(`No sessions to log: ${new Date()}`);
         return;
     }
 
@@ -109,7 +109,7 @@ function onGetPlexPyActivityData(error, response, body) {
     });
 
     writeToInflux('sessions', sessionData, null, function() {
-        console.dir('wrote sessions data to influx: ' + new Date());
+        console.dir(`wrote sessions data to influx: ${new Date()}`);
     });
 }
 
@@ -150,7 +150,7 @@ function onGetPlexPyUsersData(error, response, body) {
         let tags = { username: user.friendly_name };
 
         writeToInflux('users', value, tags, function() {
-            console.dir(`wrote ${user.friendly_name} user data to influx: new Date()`);
+            console.dir(`wrote ${user.friendly_name} user data to influx: ${new Date()}`);
         });
     });
 }
