@@ -1,7 +1,7 @@
 'use strict';
 
 const influx = require('influx');
-const request = require('request');
+const request = require('request-promise');
 
 if (!process.env.PLEXPY_TOKEN) {
     throw new Error('PLEXPY_TOKEN is required');
@@ -25,101 +25,101 @@ const plexPyConfig = {
 };
 
 const plexpyOptions = {
-    url: `${plexPyConfig.protocol}://${plexPyConfig.host}:${plexPyConfig.port}/${plexPyConfig.baseUrl}/api/v2?apikey=${plexPyConfig.token}`
+    url: `${plexPyConfig.protocol}://${plexPyConfig.host}:${plexPyConfig.port}/${plexPyConfig.baseUrl}/api/v2?apikey=${plexPyConfig.token}`,
+    resolveWithFullResponse: true
 };
 
-function getPlexPyActivityData(callback) {
+function getPlexPyActivityData() {
     return request(Object.assign(plexpyOptions, {
-        url: plexpyOptions.url,
         qs: { cmd: 'get_activity' }
-    }), callback);
+    }));
 }
 
-function getPlexPyLibraryData(callback) {
+function getPlexPyLibraryData() {
     return request(Object.assign(plexpyOptions, {
-        url: plexpyOptions.url,
         qs: { cmd: 'get_libraries' }
-    }), callback);
+    }));
 }
 
-function getPlexPyUsersData(callback) {
+function getPlexPyUsersData() {
     return request(Object.assign(plexpyOptions, {
-        url: plexpyOptions.url,
         qs: { cmd: 'get_users_table' }
-    }), callback);
+    }));
 }
 
 function writeToInflux(seriesName, values, tags, callback) {
     return influxClient.writePoint(seriesName, values, tags, callback);
 }
 
-function onGetPlexPyActivityData(error, response, body) {
-    if (!body) {
-        console.log(error);
-        return;
+function groupBy(arr, key) {
+    var newArr = [],
+        types = {},
+        newItem, i, j, cur;
+    for (i = 0, j = arr.length; i < j; i++) {
+        cur = arr[i];
+        if (!(cur[key] in types)) {
+            types[cur[key]] = { type: cur[key], data: [] };
+            newArr.push(types[cur[key]]);
+        }
+        types[cur[key]].data.push(cur);
     }
+    return newArr;
+}
 
-    let sessions = JSON.parse(body).response.data.sessions;
-
-    let sessionData = {
-        total_stream_count: sessions && sessions.length || 0,
-        total_stream_playing_count: 0,
-        transcode_stream_count: 0,
-        transcode_stream_playing_count: 0,
-        direct_stream_count: 0,
-        direct_stream_playing_count: 0
-    };
+function onGetPlexPyActivityData(response) {
+    let sessions = JSON.parse(response.body).response.data.sessions;
 
     if (sessions.length === 0) {
         console.log(`No sessions to log: ${new Date()}`);
         return;
     }
 
-    sessions.forEach(session => {
-        if (session.transcode_decision === 'direct play') {
-            sessionData.direct_stream_count++;
-            if (session.state === 'playing') {
-                sessionData.direct_stream_playing_count++;
-            }
-        } else {
-            sessionData.transcode_stream_count++;
-            if (session.state === 'playing') {
-                sessionData.transcode_stream_playing_count++;
-            }
-        }
+    let sessionsByResolution = groupBy(sessions, 'video_resolution');
 
-        writeToInflux('session', {
-            play_count: 1,
-            progress_percent: session.progress_percent,
-            transcode_progress: session.transcode_progress
-        }, {
-            type: session.transcode_decision,
-            resolution: session.video_resolution,
-            mediaType: session.media_type,
-            title: session.full_title,
-            player: session.player,
-            user: session.user
-        }, function() {
-            console.dir(`wrote ${session.user} session data to influx: ${new Date()}`);
+    sessionsByResolution.forEach(data => {
+        let resolutionSessions = data.data;
+
+        let sessionData = {
+            total_stream_count: resolutionSessions && resolutionSessions.length || 0,
+            total_stream_playing_count: 0,
+            transcode_stream_count: 0,
+            transcode_stream_playing_count: 0,
+            direct_stream_count: 0,
+            direct_stream_playing_count: 0
+        };
+
+        let tags = {
+            resolution: data.type
+        };
+
+        resolutionSessions.forEach(session => {
+            if (session.transcode_decision === 'direct play') {
+                sessionData.direct_stream_count++;
+                if (session.state === 'playing') {
+                    sessionData.direct_stream_playing_count++;
+                }
+            } else {
+                sessionData.transcode_stream_count++;
+                if (session.state === 'playing') {
+                    sessionData.transcode_stream_playing_count++;
+                }
+            }
+
+            if (session.state === 'playing') {
+                sessionData.total_stream_playing_count++;
+            }
         });
 
-        if (session.state === 'playing') {
-            sessionData.total_stream_playing_count++;
-        }
+        writeToInflux('sessions', sessionData, tags, function() {
+            console.dir(`wrote sessions data to influx: ${new Date()}`);
+        });
+
     });
 
-    writeToInflux('sessions', sessionData, null, function() {
-        console.dir(`wrote sessions data to influx: ${new Date()}`);
-    });
 }
 
-function onGetPlexPyLibraryData(error, response, body) {
-    if (!body) {
-        console.log(error);
-        return;
-    }
-
-    let libraryData = JSON.parse(body).response.data;
+function onGetPlexPyLibraryData(response) {
+    let libraryData = JSON.parse(response.body).response.data;
 
     libraryData.forEach(library => {
         let value = { count: Number(library.count) };
@@ -134,13 +134,8 @@ function onGetPlexPyLibraryData(error, response, body) {
     });
 }
 
-function onGetPlexPyUsersData(error, response, body) {
-    if (!body) {
-        console.log(error);
-        return;
-    }
-
-    let usersData = JSON.parse(body).response.data.data;
+function onGetPlexPyUsersData(response) {
+    let usersData = JSON.parse(response.body).response.data.data;
 
     usersData.forEach(user => {
         let value = {
@@ -155,12 +150,16 @@ function onGetPlexPyUsersData(error, response, body) {
     });
 }
 
-function getAllTheMetrics() {
-    getPlexPyActivityData(onGetPlexPyActivityData);
-    getPlexPyLibraryData(onGetPlexPyLibraryData);
-    getPlexPyUsersData(onGetPlexPyUsersData);
+function restart() {
+    // Every {checkInterval} seconds
+    setTimeout(getAllTheMetrics, checkInterval);
 }
 
-// Every {checkInterval} seconds
+function getAllTheMetrics() {
+    getPlexPyActivityData().then(onGetPlexPyActivityData)
+        .then(getPlexPyLibraryData).then(onGetPlexPyLibraryData)
+        .then(getPlexPyUsersData).then(onGetPlexPyUsersData)
+        .finally(restart);
+}
+
 getAllTheMetrics();
-setInterval(getAllTheMetrics, checkInterval);
