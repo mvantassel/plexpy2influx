@@ -93,6 +93,10 @@ function onGetPlexPyActivityData(response) {
         };
 
         resolutionSessions.forEach(session => {
+            if (session.state !== 'playing') {
+                return;
+            }
+
             if (session.transcode_decision === 'direct play') {
                 sessionData.direct_stream_count++;
                 if (session.state === 'playing') {
@@ -150,15 +154,24 @@ function onGetPlexPyUsersData(response) {
     });
 }
 
-function restart() {
+function restart(err) {
+    if (err) {
+        console.log(err);
+    }
+
     // Every {checkInterval} seconds
     setTimeout(getAllTheMetrics, checkInterval);
 }
 
 function getAllTheMetrics() {
-    getPlexPyActivityData().then(onGetPlexPyActivityData)
-        .then(getPlexPyLibraryData).then(onGetPlexPyLibraryData)
-        .then(getPlexPyUsersData).then(onGetPlexPyUsersData)
+    getPlexPyActivityData()
+        .then(onGetPlexPyActivityData)
+        .catch(restart)
+        .then(getPlexPyLibraryData)
+        .then(onGetPlexPyLibraryData)
+        .catch(restart)
+        .then(getPlexPyUsersData)
+        .then(onGetPlexPyUsersData)
         .finally(restart);
 }
 
