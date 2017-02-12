@@ -1,6 +1,6 @@
 'use strict';
 
-const influx = require('influx');
+const Influx = require('influx');
 const request = require('request-promise');
 
 if (!process.env.PLEXPY_TOKEN) {
@@ -9,7 +9,7 @@ if (!process.env.PLEXPY_TOKEN) {
 
 const checkInterval = process.env.UPDATE_INTERVAL_MS || 1000 * 30;
 
-const influxClient = influx({
+const influxClient = new Influx.InfluxDB({
     host: process.env.INFLUX_HOST || 'localhost',
     port: process.env.INFLUX_PORT || 8086,
     protocol: process.env.INFLUX_PROTOCOL || 'http',
