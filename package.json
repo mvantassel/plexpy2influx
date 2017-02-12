@@ -1,6 +1,6 @@
 {
   "name": "plexpy2influx",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "scripts": {
     "start": "node plexpy2influx.js"
