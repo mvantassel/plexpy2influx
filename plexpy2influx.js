@@ -47,8 +47,11 @@ function getPlexPyUsersData() {
     }));
 }
 
-function writeToInflux(seriesName, values, tags, callback) {
-    return influxClient.writePoint(seriesName, values, tags, callback);
+function writeToInflux(seriesName, values, tags) {
+    return influxClient.writeMeasurement(seriesName, [{
+        fields: values,
+        tags: tags
+    }]);
 }
 
 function groupBy(arr, key) {
@@ -114,7 +117,7 @@ function onGetPlexPyActivityData(response) {
             }
         });
 
-        writeToInflux('sessions', sessionData, tags, function() {
+        writeToInflux('sessions', sessionData, tags).then(function(){
             console.dir(`wrote sessions data to influx: ${new Date()}`);
         });
 
@@ -132,7 +135,7 @@ function onGetPlexPyLibraryData(response) {
             section: library.section_name
         };
 
-        writeToInflux('library', value, tags, function() {
+        writeToInflux('library', value, tags).then(function(){
             console.dir(`wrote ${library.section_name} library data to influx: ${new Date()}`);
         });
     });
@@ -148,7 +151,7 @@ function onGetPlexPyUsersData(response) {
         };
         let tags = { username: user.friendly_name };
 
-        writeToInflux('users', value, tags, function() {
+        writeToInflux('users', value, tags).then(function(){
             console.dir(`wrote ${user.friendly_name} user data to influx: ${new Date()}`);
         });
     });
