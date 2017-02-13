@@ -63,18 +63,17 @@ function writeToInflux(seriesName, values, tags) {
     }]);
 }
 
-function groupBy(arr, key) {
-    let newArr = [],
-        types = {},
-        newItem, i, j, cur;
-    for (i = 0, j = arr.length; i < j; i++) {
-        cur = arr[i];
-        if (!(cur[key] in types)) {
-            types[cur[key]] = { type: cur[key], data: [] };
-            newArr.push(types[cur[key]]);
+function groupBy(data, key) {
+    let newArr = [], types = {};
+
+    data.forEach(item => {
+        if (!(item[key] in types)) {
+            types[item[key]] = {type: item[key], data: []};
+            newArr.push(types[item[key]]);
         }
-        types[cur[key]].data.push(cur);
-    }
+        types[item[key]].data.push(item);
+    });
+
     return newArr;
 }
 
