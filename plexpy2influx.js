@@ -1,11 +1,12 @@
 'use strict';
 
-const Influx = require('influx');
-const request = require('request-promise');
-
 if (!process.env.PLEXPY_TOKEN) {
     throw new Error('PLEXPY_TOKEN is required');
 }
+
+const Influx = require('influx');
+const request = require('request-promise');
+const chalk = require('chalk');
 
 const checkInterval = process.env.UPDATE_INTERVAL_MS || 1000 * 30;
 
@@ -28,6 +29,14 @@ const plexpyOptions = {
     url: `${plexPyConfig.protocol}://${plexPyConfig.host}:${plexPyConfig.port}/${plexPyConfig.baseUrl}/api/v2?apikey=${plexPyConfig.token}`,
     resolveWithFullResponse: true
 };
+
+const STATE_PLAYING = 'playing';
+const STREAM_DIRECTPLAY = 'direct play';
+
+function log(message, color) {
+    color = color || 'black';
+    console.log(chalk[color](message));
+}
 
 function getPlexPyActivityData() {
     return request(Object.assign(plexpyOptions, {
@@ -55,7 +64,7 @@ function writeToInflux(seriesName, values, tags) {
 }
 
 function groupBy(arr, key) {
-    var newArr = [],
+    let newArr = [],
         types = {},
         newItem, i, j, cur;
     for (i = 0, j = arr.length; i < j; i++) {
@@ -73,7 +82,7 @@ function onGetPlexPyActivityData(response) {
     let sessions = JSON.parse(response.body).response.data.sessions;
 
     if (sessions.length === 0) {
-        console.log(`No sessions to log: ${new Date()}`);
+        log(`${new Date()}: No sessions to log`, 'yellow');
         return;
     }
 
@@ -96,29 +105,29 @@ function onGetPlexPyActivityData(response) {
         };
 
         resolutionSessions.forEach(session => {
-            if (session.state !== 'playing') {
+            if (session.state !== STATE_PLAYING) {
                 return;
             }
 
-            if (session.transcode_decision === 'direct play') {
+            if (session.transcode_decision === STREAM_DIRECTPLAY) {
                 sessionData.direct_stream_count++;
-                if (session.state === 'playing') {
+                if (session.state === STATE_PLAYING) {
                     sessionData.direct_stream_playing_count++;
                 }
             } else {
                 sessionData.transcode_stream_count++;
-                if (session.state === 'playing') {
+                if (session.state === STATE_PLAYING) {
                     sessionData.transcode_stream_playing_count++;
                 }
             }
 
-            if (session.state === 'playing') {
+            if (session.state === STATE_PLAYING) {
                 sessionData.total_stream_playing_count++;
             }
         });
 
         writeToInflux('sessions', sessionData, tags).then(function(){
-            console.dir(`wrote sessions data to influx: ${new Date()}`);
+            log(`${new Date()}: wrote session data to influx`, 'blue');
         });
 
     });
@@ -136,7 +145,7 @@ function onGetPlexPyLibraryData(response) {
         };
 
         writeToInflux('library', value, tags).then(function(){
-            console.dir(`wrote ${library.section_name} library data to influx: ${new Date()}`);
+            log(`${new Date()}: wrote ${library.section_name} library data to influx`, 'blue');
         });
     });
 }
@@ -152,30 +161,28 @@ function onGetPlexPyUsersData(response) {
         let tags = { username: user.friendly_name };
 
         writeToInflux('users', value, tags).then(function(){
-            console.dir(`wrote ${user.friendly_name} user data to influx: ${new Date()}`);
+            log(`${new Date()}: wrote ${user.friendly_name} user data to influx`, 'blue');
         });
     });
 }
 
-function restart(err) {
-    if (err) {
-        console.log(err);
-    }
+function restart() {
+    log(`${new Date()}: fetching plexpy metrics`, 'green');
 
     // Every {checkInterval} seconds
     setTimeout(getAllTheMetrics, checkInterval);
 }
 
 function getAllTheMetrics() {
-    getPlexPyActivityData()
-        .then(onGetPlexPyActivityData)
-        .catch(restart)
-        .then(getPlexPyLibraryData)
-        .then(onGetPlexPyLibraryData)
-        .catch(restart)
-        .then(getPlexPyUsersData)
-        .then(onGetPlexPyUsersData)
-        .finally(restart);
+    let getActivityData = getPlexPyActivityData().then(onGetPlexPyActivityData);
+
+    let getLibraryData = getPlexPyLibraryData().then(onGetPlexPyLibraryData);
+
+    let getUserData = getPlexPyUsersData().then(onGetPlexPyUsersData);
+
+    Promise.all([getActivityData, getLibraryData, getUserData]).then(restart, reason => {
+        log(`${new Date()}: ${reason}`, 'red');
+    });
 }
 
 getAllTheMetrics();
