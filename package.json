@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
-    "test": "mocha"
+    "test": "mocha",
+    "coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- -u exports -R spec test/**/*"
   },
   "dependencies": {
     "influx": "~5.0",
@@ -12,6 +13,7 @@
     "request-promise": "^4.1.1"
   },
   "devDependencies": {
+    "istanbul": "latest",
     "mocha": "^3.2.0"
   }
 }
