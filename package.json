@@ -3,12 +3,15 @@
   "version": "0.1.7",
   "private": true,
   "scripts": {
-    "start": "node plexpy2influx.js"
+    "start": "node app.js",
+    "test": "mocha"
   },
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "influx": "~5.0",
     "request": "^2.75.0",
     "request-promise": "^4.1.1"
+  },
+  "devDependencies": {
+    "mocha": "^3.2.0"
   }
 }

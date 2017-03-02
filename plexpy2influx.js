@@ -1,11 +1,11 @@
 'use strict';
 
-const Influx = require('influx');
-const request = require('request-promise');
-
 if (!process.env.PLEXPY_TOKEN) {
     throw new Error('PLEXPY_TOKEN is required');
 }
+
+const Influx = require('influx');
+const request = require('request-promise');
 
 const checkInterval = process.env.UPDATE_INTERVAL_MS || 1000 * 30;
 
@@ -17,7 +17,7 @@ const influxClient = new Influx.InfluxDB({
 });
 
 const plexPyConfig = {
-    token: process.env.PLEXPY_TOKEN,
+    token: process.env.PLEXPY_TOKEN || '',
     host: process.env.PLEXPY_HOST || 'localhost',
     protocol: process.env.PLEXPY_PROTOCOL ||'http',
     port: process.env.PLEXPY_PORT || 8181,
@@ -28,6 +28,15 @@ const plexpyOptions = {
     url: `${plexPyConfig.protocol}://${plexPyConfig.host}:${plexPyConfig.port}/${plexPyConfig.baseUrl}/api/v2?apikey=${plexPyConfig.token}`,
     resolveWithFullResponse: true
 };
+
+const STATE_PLAYING = 'playing';
+const STREAM_DIRECTPLAY = 'direct play';
+
+let timer;
+
+function log(message) {
+    console.log(message);
+}
 
 function getPlexPyActivityData() {
     return request(Object.assign(plexpyOptions, {
@@ -54,18 +63,17 @@ function writeToInflux(seriesName, values, tags) {
     }]);
 }
 
-function groupBy(arr, key) {
-    var newArr = [],
-        types = {},
-        newItem, i, j, cur;
-    for (i = 0, j = arr.length; i < j; i++) {
-        cur = arr[i];
-        if (!(cur[key] in types)) {
-            types[cur[key]] = { type: cur[key], data: [] };
-            newArr.push(types[cur[key]]);
+function groupBy(data, key) {
+    let newArr = [], types = {};
+
+    data.forEach(item => {
+        if (!(item[key] in types)) {
+            types[item[key]] = {type: item[key], data: []};
+            newArr.push(types[item[key]]);
         }
-        types[cur[key]].data.push(cur);
-    }
+        types[item[key]].data.push(item);
+    });
+
     return newArr;
 }
 
@@ -73,7 +81,7 @@ function onGetPlexPyActivityData(response) {
     let sessions = JSON.parse(response.body).response.data.sessions;
 
     if (sessions.length === 0) {
-        console.log(`No sessions to log: ${new Date()}`);
+        api.log(`${new Date()}: No sessions to log`);
         return;
     }
 
@@ -96,29 +104,29 @@ function onGetPlexPyActivityData(response) {
         };
 
         resolutionSessions.forEach(session => {
-            if (session.state !== 'playing') {
+            if (session.state !== STATE_PLAYING) {
                 return;
             }
 
-            if (session.transcode_decision === 'direct play') {
+            if (session.transcode_decision === STREAM_DIRECTPLAY) {
                 sessionData.direct_stream_count++;
-                if (session.state === 'playing') {
+                if (session.state === STATE_PLAYING) {
                     sessionData.direct_stream_playing_count++;
                 }
             } else {
                 sessionData.transcode_stream_count++;
-                if (session.state === 'playing') {
+                if (session.state === STATE_PLAYING) {
                     sessionData.transcode_stream_playing_count++;
                 }
             }
 
-            if (session.state === 'playing') {
+            if (session.state === STATE_PLAYING) {
                 sessionData.total_stream_playing_count++;
             }
         });
 
         writeToInflux('sessions', sessionData, tags).then(function(){
-            console.dir(`wrote sessions data to influx: ${new Date()}`);
+            api.log(`${new Date()}: wrote session data to influx`);
         });
 
     });
@@ -136,7 +144,7 @@ function onGetPlexPyLibraryData(response) {
         };
 
         writeToInflux('library', value, tags).then(function(){
-            console.dir(`wrote ${library.section_name} library data to influx: ${new Date()}`);
+            api.log(`${new Date()}: wrote ${library.section_name} library data to influx`);
         });
     });
 }
@@ -152,30 +160,36 @@ function onGetPlexPyUsersData(response) {
         let tags = { username: user.friendly_name };
 
         writeToInflux('users', value, tags).then(function(){
-            console.dir(`wrote ${user.friendly_name} user data to influx: ${new Date()}`);
+            api.log(`${new Date()}: wrote ${user.friendly_name} user data to influx`);
         });
     });
 }
 
-function restart(err) {
-    if (err) {
-        console.log(err);
-    }
+function restart() {
+    api.log(`${new Date()}: fetching plexpy metrics`);
 
     // Every {checkInterval} seconds
-    setTimeout(getAllTheMetrics, checkInterval);
+    timer = setTimeout(start, checkInterval);
 }
 
-function getAllTheMetrics() {
-    getPlexPyActivityData()
-        .then(onGetPlexPyActivityData)
-        .catch(restart)
-        .then(getPlexPyLibraryData)
-        .then(onGetPlexPyLibraryData)
-        .catch(restart)
-        .then(getPlexPyUsersData)
-        .then(onGetPlexPyUsersData)
-        .finally(restart);
+function start() {
+    let getActivityData = api.getPlexPyActivityData().then(onGetPlexPyActivityData);
+
+    let getLibraryData = api.getPlexPyLibraryData().then(onGetPlexPyLibraryData);
+
+    let getUserData = api.getPlexPyUsersData().then(onGetPlexPyUsersData);
+
+    Promise.all([getActivityData, getLibraryData, getUserData]).then(restart, reason => {
+        api.log(`${new Date()}: ${reason}`);
+    });
 }
 
-getAllTheMetrics();
+function stop() {
+    api.log(`${new Date()}: stopping plexpy2influx`);
+
+    clearTimeout(timer);
+}
+
+let api = { getPlexPyActivityData, getPlexPyLibraryData, getPlexPyUsersData, log, start, stop, writeToInflux };
+
+module.exports = api;
