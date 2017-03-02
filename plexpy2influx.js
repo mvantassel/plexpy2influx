@@ -6,7 +6,6 @@ if (!process.env.PLEXPY_TOKEN) {
 
 const Influx = require('influx');
 const request = require('request-promise');
-const chalk = require('chalk');
 
 const checkInterval = process.env.UPDATE_INTERVAL_MS || 1000 * 30;
 
@@ -18,7 +17,7 @@ const influxClient = new Influx.InfluxDB({
 });
 
 const plexPyConfig = {
-    token: process.env.PLEXPY_TOKEN,
+    token: process.env.PLEXPY_TOKEN || '',
     host: process.env.PLEXPY_HOST || 'localhost',
     protocol: process.env.PLEXPY_PROTOCOL ||'http',
     port: process.env.PLEXPY_PORT || 8181,
@@ -33,9 +32,10 @@ const plexpyOptions = {
 const STATE_PLAYING = 'playing';
 const STREAM_DIRECTPLAY = 'direct play';
 
-function log(message, color) {
-    color = color || 'black';
-    console.log(chalk[color](message));
+let timer;
+
+function log(message) {
+    console.log(message);
 }
 
 function getPlexPyActivityData() {
@@ -81,7 +81,7 @@ function onGetPlexPyActivityData(response) {
     let sessions = JSON.parse(response.body).response.data.sessions;
 
     if (sessions.length === 0) {
-        log(`${new Date()}: No sessions to log`, 'yellow');
+        api.log(`${new Date()}: No sessions to log`);
         return;
     }
 
@@ -126,7 +126,7 @@ function onGetPlexPyActivityData(response) {
         });
 
         writeToInflux('sessions', sessionData, tags).then(function(){
-            log(`${new Date()}: wrote session data to influx`, 'blue');
+            api.log(`${new Date()}: wrote session data to influx`);
         });
 
     });
@@ -144,7 +144,7 @@ function onGetPlexPyLibraryData(response) {
         };
 
         writeToInflux('library', value, tags).then(function(){
-            log(`${new Date()}: wrote ${library.section_name} library data to influx`, 'blue');
+            api.log(`${new Date()}: wrote ${library.section_name} library data to influx`);
         });
     });
 }
@@ -160,28 +160,36 @@ function onGetPlexPyUsersData(response) {
         let tags = { username: user.friendly_name };
 
         writeToInflux('users', value, tags).then(function(){
-            log(`${new Date()}: wrote ${user.friendly_name} user data to influx`, 'blue');
+            api.log(`${new Date()}: wrote ${user.friendly_name} user data to influx`);
         });
     });
 }
 
 function restart() {
-    log(`${new Date()}: fetching plexpy metrics`, 'green');
+    api.log(`${new Date()}: fetching plexpy metrics`);
 
     // Every {checkInterval} seconds
-    setTimeout(getAllTheMetrics, checkInterval);
+    timer = setTimeout(start, checkInterval);
 }
 
-function getAllTheMetrics() {
-    let getActivityData = getPlexPyActivityData().then(onGetPlexPyActivityData);
+function start() {
+    let getActivityData = api.getPlexPyActivityData().then(onGetPlexPyActivityData);
 
-    let getLibraryData = getPlexPyLibraryData().then(onGetPlexPyLibraryData);
+    let getLibraryData = api.getPlexPyLibraryData().then(onGetPlexPyLibraryData);
 
-    let getUserData = getPlexPyUsersData().then(onGetPlexPyUsersData);
+    let getUserData = api.getPlexPyUsersData().then(onGetPlexPyUsersData);
 
     Promise.all([getActivityData, getLibraryData, getUserData]).then(restart, reason => {
-        log(`${new Date()}: ${reason}`, 'red');
+        api.log(`${new Date()}: ${reason}`);
     });
 }
 
-getAllTheMetrics();
+function stop() {
+    api.log(`${new Date()}: stopping plexpy2influx`);
+
+    clearTimeout(timer);
+}
+
+let api = { getPlexPyActivityData, getPlexPyLibraryData, getPlexPyUsersData, log, start, stop, writeToInflux };
+
+module.exports = api;
