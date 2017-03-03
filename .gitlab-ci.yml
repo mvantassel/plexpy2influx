@@ -36,9 +36,9 @@ pages:
 
 publish:
   stage: deploy
-    dependencies:
-      - test
-    script:
-      - node node_modules/.bin/semantic-release-gitlab
+  dependencies:
+    - test
+  script:
+    - node node_modules/.bin/semantic-release-gitlab
   only:
     - master
