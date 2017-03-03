@@ -24,7 +24,6 @@ test:
 pages:
   stage: deploy
   dependencies:
-    - build
     - test
   script:
     - mv coverage/lcov-report/ public/
@@ -38,6 +37,7 @@ pages:
 publish:
   stage: deploy
   dependencies:
+    - build
     - test
   script:
     - node node_modules/.bin/semantic-release-gitlab
