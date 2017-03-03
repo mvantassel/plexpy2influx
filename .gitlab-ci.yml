@@ -39,6 +39,6 @@ publish:
     dependencies:
       - test
     script:
-      - $(npm bin)/semantic-release-gitlab
+      - node node_modules/.bin/semantic-release-gitlab
   only:
     - master
