@@ -33,3 +33,10 @@ pages:
     expire_in: 30 days
   only:
     - master
+
+release:
+  stage: deploy
+  dependencies:
+      - test
+  script:
+    - npm deploy-minor
