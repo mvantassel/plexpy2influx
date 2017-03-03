@@ -6,7 +6,7 @@
     "start": "node app.js",
     "test": "mocha",
     "coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- -u exports -R spec test/**/*",
-    "deploy-major": "npm version minor --force -m \"version %s\"",
+    "deploy-major": "npm version major --force -m \"version %s\"",
     "deploy-minor": "npm version minor --force -m \"version %s\""
   },
   "dependencies": {
