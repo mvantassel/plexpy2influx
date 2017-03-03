@@ -1,7 +1,6 @@
 {
   "name": "plexpy2influx",
   "version": "0.1.7",
-  "private": true,
   "scripts": {
     "start": "node app.js",
     "test": "mocha",
