@@ -34,9 +34,11 @@ pages:
   only:
     - master
 
-release:
+publish:
   stage: deploy
-  dependencies:
+    dependencies:
       - test
-  script:
-    - npm run deploy-minor
+    script:
+      - $(npm bin)/semantic-release-gitlab
+  only:
+    - master
