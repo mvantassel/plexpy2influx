@@ -7,7 +7,8 @@
     "test": "mocha",
     "coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- -u exports -R spec test/**/*",
     "deploy-major": "npm version major --force -m \"version %s\"",
-    "deploy-minor": "npm version minor --force -m \"version %s\""
+    "deploy-minor": "npm version minor --force -m \"version %s\"",
+    "postversion": "git add -A && git push && git push --tags"
   },
   "dependencies": {
     "influx": "~5.0",
