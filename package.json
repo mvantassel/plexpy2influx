@@ -4,7 +4,10 @@
   "scripts": {
     "start": "node app.js",
     "test": "mocha",
-    "coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- -u exports -R spec test/**/*"
+    "coverage": "node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- -u exports -R spec test/**/*",
+    "release-major": "npm version major --force -m \"version %s\"",
+    "release-minor": "npm version minor --force -m \"version %s\"",
+    "release-patch": "npm version patch --force -m \"version %s\""
   },
   "dependencies": {
     "influx": "~5.0",
@@ -13,7 +16,6 @@
   },
   "devDependencies": {
     "istanbul": "latest",
-    "mocha": "^3.2.0",
-    "semantic-release-gitlab": "^3.0.2"
+    "mocha": "^3.2.0"
   }
 }

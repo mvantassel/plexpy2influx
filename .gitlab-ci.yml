@@ -33,13 +33,3 @@ pages:
     expire_in: 30 days
   only:
     - master
-
-publish:
-  stage: deploy
-  dependencies:
-    - build
-    - test
-  script:
-    - node node_modules/.bin/semantic-release-gitlab
-  only:
-    - master
