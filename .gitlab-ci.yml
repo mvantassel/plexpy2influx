@@ -39,4 +39,4 @@ release:
   dependencies:
       - test
   script:
-    - npm deploy-minor
+    - npm run deploy-minor
