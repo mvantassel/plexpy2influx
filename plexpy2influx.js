@@ -39,18 +39,24 @@ function log(message) {
 }
 
 function getPlexPyActivityData() {
+    api.log(`${new Date()}: Getting PlexPy Activity Data`);
+
     return request(Object.assign(plexpyOptions, {
         qs: { cmd: 'get_activity' }
     }));
 }
 
 function getPlexPyLibraryData() {
+    api.log(`${new Date()}: Getting PlexPy Library Data`);
+
     return request(Object.assign(plexpyOptions, {
         qs: { cmd: 'get_libraries' }
     }));
 }
 
 function getPlexPyUsersData() {
+    api.log(`${new Date()}: Getting PlexPy User Data`);
+
     return request(Object.assign(plexpyOptions, {
         qs: { cmd: 'get_users_table' }
     }));
@@ -78,6 +84,8 @@ function groupBy(data, key) {
 }
 
 function onGetPlexPyActivityData(response) {
+    api.log(`${new Date()}: Parsing PlexPy Activity Data`);
+
     let sessions = JSON.parse(response.body).response.data.sessions;
 
     if (sessions.length === 0) {
@@ -134,6 +142,8 @@ function onGetPlexPyActivityData(response) {
 }
 
 function onGetPlexPyLibraryData(response) {
+    api.log(`${new Date()}: Parsing PlexPy Library Data`);
+
     let libraryData = JSON.parse(response.body).response.data;
 
     libraryData.forEach(library => {
@@ -150,6 +160,8 @@ function onGetPlexPyLibraryData(response) {
 }
 
 function onGetPlexPyUsersData(response) {
+    api.log(`${new Date()}: Parsing PlexPy User Data`);
+
     let usersData = JSON.parse(response.body).response.data.data;
 
     usersData.forEach(user => {
@@ -165,23 +177,28 @@ function onGetPlexPyUsersData(response) {
     });
 }
 
-function restart() {
-    api.log(`${new Date()}: fetching plexpy metrics`);
+function handleError(err) {
+    api.log(`${new Date()}: Error`);
+    api.log(err);
+}
 
+function restart() {
     // Every {checkInterval} seconds
     timer = setTimeout(start, checkInterval);
 }
 
 function start() {
-    let getActivityData = api.getPlexPyActivityData().then(onGetPlexPyActivityData);
+    api.log(`${new Date()}: Initialize PlexPy2Influx`);
 
-    let getLibraryData = api.getPlexPyLibraryData().then(onGetPlexPyLibraryData);
+    let getActivityData = api.getPlexPyActivityData().then(onGetPlexPyActivityData).catch(handleError);
 
-    let getUserData = api.getPlexPyUsersData().then(onGetPlexPyUsersData);
+    let getLibraryData = api.getPlexPyLibraryData().then(onGetPlexPyLibraryData).catch(handleError);
+
+    let getUserData = api.getPlexPyUsersData().then(onGetPlexPyUsersData).catch(handleError);
 
     Promise.all([getActivityData, getLibraryData, getUserData]).then(restart, reason => {
         api.log(`${new Date()}: ${reason}`);
-    });
+    }).catch(handleError);
 }
 
 function stop() {
