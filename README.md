@@ -14,12 +14,12 @@ Most basic form:
 
 Variable | Description | Default value | Sample value | Required?
 -------- | ----------- | ------------- | ------------ | ---------
-INFLUXDB_PROTOCOL | Is Influx SSL? | http | https | optional
-INFLUXDB_HOST | Where is your InfluxDB running? | localhost | influxdb | recommended
-INFLUXDB_PORT | What port is InfluxDB running on? | 8086 | 999 | optional
-INFLUXDB_DB | What InfluxDB database do you want to use? | 'plex' | 'potato' | required
-INFLUXDB_USER | InfluxDB username | | | optional
-INFLUXDB_PASS | InfluxDB password | metrics | | optional
+INFLUX_PROTOCOL | Is Influx SSL? | http | https | optional
+INFLUX_HOST | Where is your InfluxDB running? | localhost | influxdb | recommended
+INFLUX_PORT | What port is InfluxDB running on? | 8086 | 999 | optional
+INFLUX_DB | What InfluxDB database do you want to use? | 'plex' | 'potato' | required
+INFLUX_USER | InfluxDB username | | | optional
+INFLUX_PASS | InfluxDB password | | | optional
 PLEXPY_TOKEN | What is your PlexPy API Token? | | abc123 | required
 PLEXPY_PROTOCOL | Is PlexPy SSL? | http | https | optional
 PLEXPY_HOST | Where is your PlexPy running? | localhost | plexpy | recommended
