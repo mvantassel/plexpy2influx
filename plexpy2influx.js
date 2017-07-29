@@ -135,7 +135,7 @@ function onGetPlexPyActivityData(response) {
 
         writeToInflux('sessions', sessionData, tags).then(function(){
             api.log(`${new Date()}: wrote session data to influx`);
-        });
+        }).catch(handleError);
 
     });
 
@@ -155,7 +155,7 @@ function onGetPlexPyLibraryData(response) {
 
         writeToInflux('library', value, tags).then(function(){
             api.log(`${new Date()}: wrote ${library.section_name} library data to influx`);
-        });
+        }).catch(handleError);
     });
 }
 
@@ -173,12 +173,12 @@ function onGetPlexPyUsersData(response) {
 
         writeToInflux('users', value, tags).then(function(){
             api.log(`${new Date()}: wrote ${user.friendly_name} user data to influx`);
-        });
+        }).catch(handleError);
     });
 }
 
 function handleError(err) {
-    api.log(`${new Date()}: Error`);
+    api.log(`${new Date()}: Error -- ${err.message}`);
     api.log(err);
 }
 
