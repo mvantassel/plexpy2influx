@@ -29,7 +29,7 @@ UPDATE_INTERVAL_MS | How often should it check for new metrics? | 30000 | 1000 |
 
 # Example Output
 
-### series: sessions
+### sessions
 fields: `{ total_stream_count: 1,
   total_stream_playing_count: 1,
   transcode_stream_count: 1,
@@ -38,11 +38,11 @@ fields: `{ total_stream_count: 1,
   direct_stream_playing_count: 0 }`  
 tags: `{ resolution: '1080p' }`
 
-### series: users
+### users
 fields: `{ duration: 0, plays: 0 }`  
 tags: `{ username: 'username' }`
 
-### series: library
+### library
 fields: `{ count: 1 }`  
 tags: `{ type: 'movie', section: 'section name' }`
 
