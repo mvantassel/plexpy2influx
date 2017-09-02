@@ -27,6 +27,25 @@ PLEXPY_PORT | What port is PlexPy running on? | 8181 | 999 | optional
 PLEXPY_BASEURL | Is PlexPy running behind a proxy? | | 'plexpy' | optional
 UPDATE_INTERVAL_MS | How often should it check for new metrics? | 30000 | 1000 | optional
 
-## Tags
+# Example Output
+
+### sessions
+fields: `{ total_stream_count: 1,
+  total_stream_playing_count: 1,
+  transcode_stream_count: 1,
+  transcode_stream_playing_count: 1,
+  direct_stream_count: 0,
+  direct_stream_playing_count: 0 }`  
+tags: `{ resolution: '1080p' }`
+
+### users
+fields: `{ duration: 0, plays: 0 }`  
+tags: `{ username: 'username' }`
+
+### library
+fields: `{ count: 1 }`  
+tags: `{ type: 'movie', section: 'section name' }`
+
+# Tags
 
 - latest
