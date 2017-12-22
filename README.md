@@ -1,6 +1,3 @@
-[![build status](https://gitlab.com/matthewv/plexpy2influx/badges/master/build.svg)](https://gitlab.com/matthewv/plexpy2influx/pipelines)
-[![coverage report](https://gitlab.com/matthewv/plexpy2influx/badges/master/coverage.svg)](https://matthewv.gitlab.io/plexpy2influx/plexpy2influx/index.html)
-
 # plexpy2influx
 Pipe select PlexPy metrics to InfluxDB so it can be graphed in Grafana
 

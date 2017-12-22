@@ -95,6 +95,34 @@ function onGetPlexPyActivityData(response) {
         return;
     }
 
+    sessions.forEach(session => {
+        let sessionData = {
+            active: session.state.toLowerCase() === STATE_PLAYING,
+            progress: session.progress_percent,
+            title: session.title,
+            year: session.year,
+            artwork: session.art,
+            rating: session.content_rating,
+            duration: session.duration,
+            platform: session.platform,
+            player: session.player,
+            section: session.section_id
+        };
+
+        let tags = {
+            session: session.session_key,
+            state: session.state,
+            transcode_decision: session.transcode_decision,
+            user: session.user,
+            type: session.media_type,
+            resolution: session.video_resolution
+        };
+
+        writeToInflux('session', sessionData, tags).then(function(){
+            api.log(`${new Date()}: wrote session data to influx`);
+        }).catch(handleError);
+    });
+
     let sessionsByResolution = groupBy(sessions, 'video_resolution');
 
     sessionsByResolution.forEach(data => {
@@ -110,7 +138,7 @@ function onGetPlexPyActivityData(response) {
         };
 
         let tags = {
-            resolution: data.type
+            resolution: data.type ? data.type.toLowerCase() : null
         };
 
         resolutionSessions.forEach(session => {
@@ -136,7 +164,7 @@ function onGetPlexPyActivityData(response) {
         });
 
         writeToInflux('sessions', sessionData, tags).then(function(){
-            api.log(`${new Date()}: wrote session data to influx`);
+            api.log(`${new Date()}: wrote sessions data to influx`);
         }).catch(handleError);
 
     });
@@ -209,6 +237,14 @@ function stop() {
     clearTimeout(timer);
 }
 
-let api = { getPlexPyActivityData, getPlexPyLibraryData, getPlexPyUsersData, log, start, stop, writeToInflux };
+let api = { 
+    getPlexPyActivityData, 
+    getPlexPyLibraryData, 
+    getPlexPyUsersData, 
+    log, 
+    start, 
+    stop, 
+    writeToInflux 
+};
 
 module.exports = api;

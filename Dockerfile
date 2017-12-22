@@ -1,14 +1,5 @@
-FROM node:argon
-
-# Create app directory
+FROM mhart/alpine-node:base-4
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
-
-# Install app dependencies
-COPY package.json /usr/src/app/
-RUN npm install
-
-# Bundle app source
 COPY . /usr/src/app
-
-CMD [ "npm", "start" ]
+CMD [ "node", "app.js" ]
