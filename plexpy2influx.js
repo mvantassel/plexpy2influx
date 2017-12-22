@@ -106,11 +106,11 @@ function onGetPlexPyActivityData(response) {
             duration: session.duration,
             platform: session.platform,
             player: session.player,
-            section: session.section_id
+            section: session.section_id,
+            session: session.session_key
         };
 
         let tags = {
-            session: session.session_key,
             state: session.state,
             transcode_decision: session.transcode_decision,
             user: session.user,
