@@ -99,7 +99,9 @@ function onGetPlexPyActivityData(response) {
         let sessionData = {
             active: session.state.toLowerCase() === STATE_PLAYING,
             progress: session.progress_percent,
-            title: session.title,
+            title: session.full_title,
+            parent_title: session.parent_title,
+            grandparent_title: session.grandparent_title,
             year: session.year,
             artwork: session.art,
             rating: session.content_rating,
