@@ -117,7 +117,7 @@ function onGetPlexPyActivityData(response) {
             transcode_decision: session.transcode_decision,
             user: session.user,
             type: session.media_type,
-            resolution: session.video_resolution
+            resolution: String(session.video_resolution).toLowerCase()
         };
 
         writeToInflux('session', sessionData, tags).then(function(){
