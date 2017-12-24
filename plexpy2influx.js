@@ -115,7 +115,7 @@ function onGetPlexPyActivityData(response) {
         let tags = {
             state: session.state,
             transcode_decision: session.transcode_decision,
-            user: session.user,
+            username: session.friendly_name,
             type: session.media_type,
             resolution: String(session.video_resolution).toLowerCase()
         };
